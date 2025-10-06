@@ -38,4 +38,39 @@ document.addEventListener("DOMContentLoaded", async () => {
     form.reset();
     await cargarMovimientos();
   });
+  // 📥 Importar movimientos desde archivo CSV
+document.getElementById("importCSV").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const text = await file.text();
+  const rows = text.split("\n").slice(1); // omite encabezado
+
+  let count = 0;
+  const user = (await supabase.auth.getUser()).data.user;
+
+  for (const row of rows) {
+    const cols = row.split(",");
+    if (cols.length < 3) continue;
+
+    const [fechaRaw, descripcion, montoRaw, tipoRaw] = cols;
+    const monto = parseFloat(montoRaw?.replace(",", "."));
+    const tipo = tipoRaw?.trim() || (monto >= 0 ? "Ingreso" : "Gasto");
+
+    if (!isNaN(monto)) {
+      await supabase.from("movimientos").insert([{
+        usuario_id: user.id,
+        tipo,
+        monto: Math.abs(monto),
+        descripcion: descripcion?.trim(),
+        fecha: new Date(fechaRaw)
+      }]);
+      count++;
+    }
+  }
+
+  alert(`✅ Se importaron ${count} movimientos desde el CSV`);
+  await cargarMovimientos();
+});
+
 });
