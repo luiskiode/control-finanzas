@@ -35,10 +35,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       descripcion: document.getElementById("descripcion").value,
       categoria_id: parseInt(document.getElementById("categoria").value)
     };
-    const { error } = await supabase.from("movimientos").insert([movimiento]);
-    if (error) return alert("❌ Error: " + error.message);
-    form.reset();
-    await cargarMovimientos();
+    const { error } = await supabase.from("movimientos").insert([{
+  tipo,
+  monto: Math.abs(monto),
+  descripcion: descripcion?.trim(),
+  fecha: new Date(fechaRaw)
+}]);
+if (error) {
+  console.error("Insert falló:", error.message);
+  continue; // no sumes al contador
+} else {
+  count++;
+}
   });
 
 // 📥 Importar movimientos desde archivo CSV (corrige separadores, BOM y columnas vacías)
