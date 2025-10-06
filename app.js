@@ -6,25 +6,50 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Cargar categorías
   const { data: categorias } = await supabase.from("categorias").select("*");
   categoriaSelect.innerHTML = categorias.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+ 
+  // Cargar categorías con fallback
+const { data: categorias, error: catErr } = await supabase.from("categorias").select("*");
+if (catErr) console.error(catErr);
+const lista = (categorias && categorias.length) ? categorias : [{ id: 0, nombre: "Sin categoría" }];
+categoriaSelect.innerHTML = lista.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
 
   // Cargar movimientos
   async function cargarMovimientos() {
-    const { data, error } = await supabase
-      .from("movimientos")
-      .select("*, categorias(nombre)")
-      .order("fecha", { ascending: false });
-    if (error) console.error(error);
-    tabla.innerHTML = data.map(m => `
-      <tr>
-        <td>${new Date(m.fecha).toLocaleString()}</td>
-        <td>${m.tipo}</td>
-        <td>${m.monto.toFixed(2)}</td>
-        <td>${m.categorias?.nombre || "-"}</td>
-        <td>${m.descripcion || ""}</td>
-      </tr>
-    `).join("");
-  }
-  await cargarMovimientos();
+  const { data, error } = await supabase
+    .from("movimientos")
+    .select("*, categorias(nombre)")
+    .order("fecha", { ascending: false });
+  if (error) console.error(error);
+
+  // Render tabla
+  tabla.innerHTML = (data || []).map(m => `
+    <tr>
+      <td>${new Date(m.fecha).toLocaleString()}</td>
+      <td>${m.tipo}</td>
+      <td>${Number(m.monto).toFixed(2)}</td>
+      <td>${m.categorias?.nombre || "-"}</td>
+      <td>${m.descripcion || ""}</td>
+    </tr>
+  `).join("");
+
+  // Actualiza totales
+  actualizarResumen(data || []);
+}
+
+  function actualizarResumen(movs) {
+  const ingresos = movs
+    .filter(m => m.tipo === "Ingreso")
+    .reduce((a, b) => a + Number(b.monto || 0), 0);
+  const gastos = movs
+    .filter(m => m.tipo === "Gasto")
+    .reduce((a, b) => a + Number(b.monto || 0), 0);
+  const balance = ingresos - gastos;
+
+  const fmt = v => "S/ " + Number(v).toFixed(2);
+  document.getElementById("totalIngresos").textContent = fmt(ingresos);
+  document.getElementById("totalGastos").textContent   = fmt(gastos);
+  document.getElementById("balance").textContent       = fmt(balance);
+}
 
   // Registrar nuevo movimiento manualmente
   form.addEventListener("submit", async e => {
