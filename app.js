@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       let count = 0;
 
       for (const row of rows) {
-        const cols = row.split(",");
+        const cols = row.split(row.includes(";") ? ";" : ",");
         if (cols.length < 3) continue;
 
         const [fechaRaw, descripcion, montoRaw, tipoRaw] = cols;
