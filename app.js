@@ -41,30 +41,39 @@ document.addEventListener("DOMContentLoaded", async () => {
     await cargarMovimientos();
   });
 
-// 📥 Importar movimientos desde archivo CSV (compatible con , o ;)
+// 📥 Importar movimientos desde archivo CSV (corrige BOM y separadores)
 document.getElementById("importCSV").addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
   try {
     const text = await file.text();
-    const rows = text.trim().split("\n").slice(1); // Omitir encabezado
+    // ✅ Quitar BOM oculto y detectar separador
+    const cleanText = text.replace(/^\uFEFF/, "").trim();
+    const lines = cleanText.split(/\r?\n/);
+    const headers = lines[0].split(lines[0].includes(";") ? ";" : ",").map(h => h.trim().toLowerCase());
+    const dataRows = lines.slice(1);
 
     let count = 0;
 
-    for (const row of rows) {
-      const cols = row.split(row.includes(";") ? ";" : ",");
+    for (const row of dataRows) {
+      if (!row.trim()) continue;
+      const cols = row.split(row.includes(";") ? ";" : ",").map(c => c.trim());
       if (cols.length < 3) continue;
 
-      const [fechaRaw, descripcion, montoRaw, tipoRaw] = cols;
+      const fechaRaw = cols[headers.indexOf("fecha")];
+      const descripcion = cols[headers.indexOf("descripcion")];
+      const montoRaw = cols[headers.indexOf("monto")];
+      const tipoRaw = cols[headers.indexOf("tipo")];
+
       const monto = parseFloat(montoRaw?.replace(",", "."));
-      const tipo = tipoRaw?.trim() || (monto >= 0 ? "Ingreso" : "Gasto");
+      const tipo = tipoRaw || (monto >= 0 ? "Ingreso" : "Gasto");
 
       if (!isNaN(monto)) {
         const { error } = await supabase.from("movimientos").insert([{
           tipo,
           monto: Math.abs(monto),
-          descripcion: descripcion?.trim(),
+          descripcion,
           fecha: new Date(fechaRaw)
         }]);
         if (error) console.error(error);
