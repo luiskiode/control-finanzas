@@ -35,31 +35,25 @@ document.addEventListener("DOMContentLoaded", async () => {
       descripcion: document.getElementById("descripcion").value,
       categoria_id: parseInt(document.getElementById("categoria").value)
     };
-    const { error } = await supabase.from("movimientos").insert([{
-  tipo,
-  monto: Math.abs(monto),
-  descripcion: descripcion?.trim(),
-  fecha: new Date(fechaRaw)
-}]);
-if (error) {
-  console.error("Insert falló:", error.message);
-  continue; // no sumes al contador
-} else {
-  count++;
-}
+    const { error } = await supabase.from("movimientos").insert([movimiento]);
+    if (error) return alert("❌ Error: " + error.message);
+    form.reset();
+    await cargarMovimientos();
   });
 
-// 📥 Importar movimientos desde archivo CSV (corrige separadores, BOM y columnas vacías)
+// 📥 Importar movimientos desde archivo CSV (robusto: BOM, ; final, separador , o ;)
 document.getElementById("importCSV").addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
   try {
     const text = await file.text();
+
+    // 🧼 Limpieza: quitar BOM, líneas vacías
     const cleanText = text.replace(/^\uFEFF/, "").trim();
     const lines = cleanText.split(/\r?\n/).filter(l => l.trim() !== "");
 
-    // Detectar separador
+    // 🧭 Detección de separador por encabezado
     const sep = lines[0].includes(";") ? ";" : ",";
     const headers = lines[0].split(sep).map(h => h.trim().toLowerCase());
     const dataRows = lines.slice(1);
@@ -67,35 +61,42 @@ document.getElementById("importCSV").addEventListener("change", async (e) => {
     let count = 0;
 
     for (const row of dataRows) {
-      const cols = row.split(sep).map(c => c.trim()).filter(c => c !== "");
-      if (cols.length < 3) continue;
+      if (!row.trim()) continue;
 
-      const fechaRaw = cols[headers.indexOf("fecha")] || cols[0];
-      const descripcion = cols[headers.indexOf("descripcion")] || cols[1];
-      const montoRaw = cols[headers.indexOf("monto")] || cols[2];
-      const tipoRaw = cols[headers.indexOf("tipo")] || cols[3];
+      // Dividir y quitar columnas vacías por ; final
+      const cols = row.split(sep).map(c => c.trim());
+
+      // Mapear por nombre de columna (soporta orden distinto)
+      const fechaRaw     = cols[headers.indexOf("fecha")]        ?? cols[0];
+      const descripcion  = cols[headers.indexOf("descripcion")]  ?? cols[1];
+      const montoRaw     = cols[headers.indexOf("monto")]        ?? cols[2];
+      const tipoRaw      = headers.includes("tipo") ? cols[headers.indexOf("tipo")] : undefined;
 
       if (!fechaRaw || !montoRaw) continue;
 
-      const monto = parseFloat(montoRaw.replace(",", "."));
-      const tipo = tipoRaw?.trim() || (monto >= 0 ? "Ingreso" : "Gasto");
+      const monto = parseFloat(String(montoRaw).replace(",", "."));
+      const tipo  = (tipoRaw?.trim()) || (monto >= 0 ? "Ingreso" : "Gasto");
 
-      if (!isNaN(monto)) {
-        const { error } = await supabase.from("movimientos").insert([{
-          tipo,
-          monto: Math.abs(monto),
-          descripcion: descripcion?.trim(),
-          fecha: new Date(fechaRaw)
-        }]);
-        if (error) console.error(error);
-        else count++;
+      if (isNaN(monto)) continue;
+
+      const { error } = await supabase.from("movimientos").insert([{
+        tipo,
+        monto: Math.abs(monto),
+        descripcion: (descripcion || "").trim(),
+        fecha: new Date(fechaRaw)
+      }]);
+
+      if (error) {
+        console.error("Insert falló:", error.message);
+        // No sumamos al contador si falló
+      } else {
+        count++;
       }
     }
 
     alert(`✅ Se importaron ${count} movimientos`);
     await cargarMovimientos();
-    e.target.value = ""; // limpiar input
-
+    e.target.value = ""; // permitir reimportar el mismo archivo
   } catch (err) {
     console.error(err);
     alert("❌ Error al procesar el CSV");
