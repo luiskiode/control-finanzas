@@ -7,12 +7,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   const { data: categorias } = await supabase.from("categorias").select("*");
   categoriaSelect.innerHTML = categorias.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
  
-  // Cargar categorías con fallback
-const { data: categorias, error: catErr } = await supabase.from("categorias").select("*");
+  // Cargar categorías con fallback sin redeclarar nombres
+const { data: categoriasData, error: catErr } = await supabase.from("categorias").select("*");
 if (catErr) console.error(catErr);
-const lista = (categorias && categorias.length) ? categorias : [{ id: 0, nombre: "Sin categoría" }];
-categoriaSelect.innerHTML = lista.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
 
+const categoriasList = (categoriasData && categoriasData.length)
+  ? categoriasData
+  : [{ id: null, nombre: "Sin categoría" }];
+
+categoriaSelect.innerHTML = categoriasList
+  .map(c => `<option value="${c.id ?? ""}">${c.nombre}</option>`)
+  .join("");
   // Cargar movimientos
   async function cargarMovimientos() {
   const { data, error } = await supabase
@@ -58,7 +63,10 @@ categoriaSelect.innerHTML = lista.map(c => `<option value="${c.id}">${c.nombre}<
       tipo: document.getElementById("tipo").value,
       monto: parseFloat(document.getElementById("monto").value),
       descripcion: document.getElementById("descripcion").value,
-      categoria_id: parseInt(document.getElementById("categoria").value)
+      categoria_id: (() => {
+  const v = document.getElementById("categoria").value;
+  return v ? parseInt(v) : null;
+})()
     };
     const { error } = await supabase.from("movimientos").insert([movimiento]);
     if (error) return alert("❌ Error: " + error.message);
