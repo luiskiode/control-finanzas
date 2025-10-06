@@ -9,7 +9,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Cargar movimientos
   async function cargarMovimientos() {
-    const { data, error } = await supabase.from("movimientos").select("*, categorias(nombre)").order("fecha", { ascending: false });
+    const { data, error } = await supabase
+      .from("movimientos")
+      .select("*, categorias(nombre)")
+      .order("fecha", { ascending: false });
     if (error) console.error(error);
     tabla.innerHTML = data.map(m => `
       <tr>
@@ -23,11 +26,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   await cargarMovimientos();
 
-  // Registrar nuevo movimiento
+  // Registrar nuevo movimiento manualmente
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const movimiento = {
-      usuario_id: (await supabase.auth.getUser()).data.user.id,
       tipo: document.getElementById("tipo").value,
       monto: parseFloat(document.getElementById("monto").value),
       descripcion: document.getElementById("descripcion").value,
@@ -38,39 +40,45 @@ document.addEventListener("DOMContentLoaded", async () => {
     form.reset();
     await cargarMovimientos();
   });
-  // 📥 Importar movimientos desde archivo CSV
-document.getElementById("importCSV").addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
 
-  const text = await file.text();
-  const rows = text.split("\n").slice(1); // omite encabezado
+  // 📥 Importar movimientos desde archivo CSV (sin login)
+  document.getElementById("importCSV").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  let count = 0;
-  const user = (await supabase.auth.getUser()).data.user;
+    try {
+      const text = await file.text();
+      const rows = text.split("\n").slice(1); // Omitir encabezado
 
-  for (const row of rows) {
-    const cols = row.split(",");
-    if (cols.length < 3) continue;
+      let count = 0;
 
-    const [fechaRaw, descripcion, montoRaw, tipoRaw] = cols;
-    const monto = parseFloat(montoRaw?.replace(",", "."));
-    const tipo = tipoRaw?.trim() || (monto >= 0 ? "Ingreso" : "Gasto");
+      for (const row of rows) {
+        const cols = row.split(",");
+        if (cols.length < 3) continue;
 
-    if (!isNaN(monto)) {
-      await supabase.from("movimientos").insert([{
-        usuario_id: user.id,
-        tipo,
-        monto: Math.abs(monto),
-        descripcion: descripcion?.trim(),
-        fecha: new Date(fechaRaw)
-      }]);
-      count++;
+        const [fechaRaw, descripcion, montoRaw, tipoRaw] = cols;
+        const monto = parseFloat(montoRaw?.replace(",", "."));
+        const tipo = tipoRaw?.trim() || (monto >= 0 ? "Ingreso" : "Gasto");
+
+        if (!isNaN(monto)) {
+          const { error } = await supabase.from("movimientos").insert([{
+            tipo,
+            monto: Math.abs(monto),
+            descripcion: descripcion?.trim(),
+            fecha: new Date(fechaRaw)
+          }]);
+          if (error) console.error(error);
+          else count++;
+        }
+      }
+
+      alert(`✅ Se importaron ${count} movimientos`);
+      await cargarMovimientos();
+      e.target.value = ""; // limpiar input para poder volver a importar
+
+    } catch (err) {
+      console.error(err);
+      alert("❌ Error al procesar el CSV");
     }
-  }
-
-  alert(`✅ Se importaron ${count} movimientos desde el CSV`);
-  await cargarMovimientos();
-});
-
+  });
 });
