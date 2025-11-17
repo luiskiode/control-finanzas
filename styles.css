@@ -58,3 +58,19 @@ tr:hover { background: #333; }
 #totalIngresos { color: #22c55e; font-weight: 700; }
 #totalGastos   { color: #ef4444; font-weight: 700; }
 #balance       { color: #00ff88; font-weight: 800; }
+
+.controles {
+  max-width: 600px;
+  margin: 10px auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.filtros label { margin: 0 6px; }
+.acciones button { padding: 10px 12px; border-radius: 6px; border: none; cursor: pointer; }
+#btnAplicarFiltros { background: #00ff88; color: #000; }
+#btnLimpiarFiltros { background: #444; color: #fff; }
+#btnExportar { background: #0ea5e9; color: #000; }
+

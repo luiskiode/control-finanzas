@@ -1,39 +1,51 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Control de Finanzas</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="./supabase-config.js" defer></script>
-  <script src="./app.js" defer></script>
-  <link rel="icon" href="data:,">
 
+  <!-- Estilos generales -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Supabase JS (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+
+  <!-- Configuración del cliente Supabase (usa tu URL + anon key) -->
+  <script src="./supabase-config.js" defer></script>
+
+  <!-- Lógica principal del front (carga movimientos, resumen, filtros, CSV, etc.) -->
+  <script src="./app.js" defer></script>
+
+  <!-- Evita error de favicon en navegadores -->
+  <link rel="icon" href="data:,">
 </head>
 <body>
-
+  <!-- Importador CSV local (útil para cargar históricos o backups) -->
   <div class="importador">
-  <h3>📥 Importar movimientos desde archivo CSV</h3>
-  <input type="file" id="importCSV" accept=".csv">
-</div>
+    <h3>📥 Importar movimientos desde archivo CSV</h3>
+    <input type="file" id="importCSV" accept=".csv" />
+  </div>
 
   <h1>💰 Control de Finanzas</h1>
-  <section id="resumen" class="resumen">
-  <div class="card">
-    <h3>💵 Ingresos</h3>
-    <p id="totalIngresos">S/ 0.00</p>
-  </div>
-  <div class="card">
-    <h3>💸 Gastos</h3>
-    <p id="totalGastos">S/ 0.00</p>
-  </div>
-  <div class="card">
-    <h3>🧮 Balance</h3>
-    <p id="balance">S/ 0.00</p>
-  </div>
-</section>
 
+  <!-- Resumen general -->
+  <section id="resumen" class="resumen">
+    <div class="card">
+      <h3>💵 Ingresos</h3>
+      <p id="totalIngresos">S/ 0.00</p>
+    </div>
+    <div class="card">
+      <h3>💸 Gastos</h3>
+      <p id="totalGastos">S/ 0.00</p>
+    </div>
+    <div class="card">
+      <h3>🧮 Balance</h3>
+      <p id="balance">S/ 0.00</p>
+    </div>
+  </section>
+
+  <!-- Registro manual de movimiento (se puede guardar en Supabase desde app.js) -->
   <section id="registro">
     <h2>Registrar movimiento</h2>
     <form id="movForm">
@@ -41,21 +53,56 @@
         <option value="Ingreso">Ingreso</option>
         <option value="Gasto">Gasto</option>
       </select>
-      <input type="number" id="monto" placeholder="Monto" required>
-      <input type="text" id="descripcion" placeholder="Descripción">
-      <select id="categoria" required></select>
+      <input type="number" id="monto" placeholder="Monto" step="0.01" required />
+      <input type="text" id="descripcion" placeholder="Descripción" />
+      <select id="categoria" id="categoria" required></select>
       <button type="submit">Registrar</button>
     </form>
   </section>
 
+  <!-- Listado de movimientos (lo que viene de Supabase + Yape) -->
   <section id="lista">
     <h2>Movimientos</h2>
     <table id="tablaMov">
       <thead>
-        <tr><th>Fecha</th><th>Tipo</th><th>Monto</th><th>Categoría</th><th>Descripción</th></tr>
+        <tr>
+          <th>Fecha</th>
+          <th>Tipo</th>
+          <th>Monto</th>
+          <th>Categoría</th>
+          <th>Descripción</th>
+        </tr>
       </thead>
       <tbody></tbody>
     </table>
+  </section>
+
+  <!-- Filtros, acciones y exportación -->
+  <section id="controles" class="controles">
+    <div class="filtros">
+      <label>
+        Desde:
+        <input type="date" id="fDesde" />
+      </label>
+      <label>
+        Hasta:
+        <input type="date" id="fHasta" />
+      </label>
+      <label>
+        Tipo:
+        <select id="fTipo">
+          <option value="">Todos</option>
+          <option value="Ingreso">Ingreso</option>
+          <option value="Gasto">Gasto</option>
+        </select>
+      </label>
+      <button id="btnAplicarFiltros">Aplicar</button>
+      <button id="btnLimpiarFiltros">Limpiar</button>
+    </div>
+
+    <div class="acciones">
+      <button id="btnExportar">⬇️ Exportar CSV</button>
+    </div>
   </section>
 </body>
 </html>
