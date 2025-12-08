@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Control de Finanzas</title>
+  <title>Control de Finanzas 2.0</title>
 
   <!-- Estilos generales -->
   <link rel="stylesheet" href="styles.css" />
@@ -14,38 +14,82 @@
   <!-- Configuración del cliente Supabase (usa tu URL + anon key) -->
   <script src="./supabase-config.js" defer></script>
 
-  <!-- Lógica principal del front (carga movimientos, resumen, filtros, CSV, etc.) -->
+  <!-- Lógica principal del front -->
   <script src="./app.js" defer></script>
 
   <!-- Evita error de favicon en navegadores -->
   <link rel="icon" href="data:,">
 </head>
 <body>
-  <!-- Importador CSV local (útil para cargar históricos o backups) -->
+  <!-- Importador CSV local -->
   <div class="importador">
     <h3>📥 Importar movimientos desde archivo CSV</h3>
     <input type="file" id="importCSV" accept=".csv" />
   </div>
 
-  <h1>💰 Control de Finanzas</h1>
+  <h1>💰 Control de Finanzas 2.0</h1>
+
+  <!-- Panel de tipo de cambio y alertas -->
+  <section id="tipoCambioPanel" class="tc-panel">
+    <h2>💱 Tipo de cambio y alertas</h2>
+    <div class="tc-grid">
+      <label>
+        Tipo de cambio actual (PEN por USD):
+        <input type="number" id="tcActual" step="0.0001" placeholder="Ej: 3.75" />
+      </label>
+      <label>
+        Tipo de cambio objetivo para vender USD:
+        <input type="number" id="tcObjetivo" step="0.0001" placeholder="Ej: 3.80" />
+      </label>
+    </div>
+    <div id="alertaTC" class="alerta info">
+      Ingresa el tipo de cambio actual y tu objetivo para recibir recomendaciones.
+    </div>
+  </section>
 
   <!-- Resumen general -->
   <section id="resumen" class="resumen">
     <div class="card">
-      <h3>💵 Ingresos</h3>
-      <p id="totalIngresos">S/ 0.00</p>
+      <h3>💵 Ingresos (PEN)</h3>
+      <p id="totalIngresosPEN">S/ 0.00</p>
     </div>
     <div class="card">
-      <h3>💸 Gastos</h3>
-      <p id="totalGastos">S/ 0.00</p>
+      <h3>💸 Gastos (PEN)</h3>
+      <p id="totalGastosPEN">S/ 0.00</p>
     </div>
     <div class="card">
-      <h3>🧮 Balance</h3>
-      <p id="balance">S/ 0.00</p>
+      <h3>🧮 Balance (PEN)</h3>
+      <p id="balancePEN">S/ 0.00</p>
+    </div>
+
+    <div class="card">
+      <h3>💵 Ingresos (USD)</h3>
+      <p id="totalIngresosUSD">$ 0.00</p>
+    </div>
+    <div class="card">
+      <h3>💸 Gastos (USD)</h3>
+      <p id="totalGastosUSD">$ 0.00</p>
+    </div>
+    <div class="card">
+      <h3>🧮 Balance (USD)</h3>
+      <p id="balanceUSD">$ 0.00</p>
     </div>
   </section>
 
-  <!-- Registro manual de movimiento (se puede guardar en Supabase desde app.js) -->
+  <!-- Alerta gastos hormiga -->
+  <section id="alertas" class="alertas">
+    <div id="alertaHormiga" class="alerta neutra">
+      Aún no superas el límite diario de S/ 5 en gastos hormiga 💡
+    </div>
+  </section>
+
+  <!-- Recomendaciones financieras -->
+  <section id="recomendaciones" class="recomendaciones">
+    <h2>📊 Recomendaciones financieras</h2>
+    <ul id="listaRecomendaciones"></ul>
+  </section>
+
+  <!-- Registro manual de movimiento -->
   <section id="registro">
     <h2>Registrar movimiento</h2>
     <form id="movForm">
@@ -53,14 +97,41 @@
         <option value="Ingreso">Ingreso</option>
         <option value="Gasto">Gasto</option>
       </select>
+
+      <select id="moneda" required>
+        <option value="PEN">Soles (PEN)</option>
+        <option value="USD">Dólares (USD)</option>
+      </select>
+
+      <select id="banco" required>
+        <option value="BCP">BCP</option>
+        <option value="Interbank">Interbank</option>
+        <option value="Scotiabank">Scotiabank</option>
+        <option value="Crediscotia">Crediscotia</option>
+        <option value="Saga Falabella">Saga Falabella</option>
+      </select>
+
+      <select id="origen" required>
+        <option value="Manual">Manual</option>
+        <option value="Yape">Yape</option>
+        <option value="Automate">Automate</option>
+      </select>
+
       <input type="number" id="monto" placeholder="Monto" step="0.01" required />
       <input type="text" id="descripcion" placeholder="Descripción" />
-      <select id="categoria" id="categoria" required></select>
+
+      <select id="categoria" required></select>
+
+      <label class="chk-inline">
+        <input type="checkbox" id="esHormiga" />
+        Gasto hormiga
+      </label>
+
       <button type="submit">Registrar</button>
     </form>
   </section>
 
-  <!-- Listado de movimientos (lo que viene de Supabase + Yape) -->
+  <!-- Listado de movimientos -->
   <section id="lista">
     <h2>Movimientos</h2>
     <table id="tablaMov">
@@ -68,7 +139,11 @@
         <tr>
           <th>Fecha</th>
           <th>Tipo</th>
+          <th>Moneda</th>
           <th>Monto</th>
+          <th>Banco</th>
+          <th>Origen</th>
+          <th>Hormiga</th>
           <th>Categoría</th>
           <th>Descripción</th>
         </tr>
@@ -96,6 +171,39 @@
           <option value="Gasto">Gasto</option>
         </select>
       </label>
+      <label>
+        Moneda:
+        <select id="fMoneda">
+          <option value="">Todas</option>
+          <option value="PEN">PEN</option>
+          <option value="USD">USD</option>
+        </select>
+      </label>
+      <label>
+        Banco:
+        <select id="fBanco">
+          <option value="">Todos</option>
+          <option value="BCP">BCP</option>
+          <option value="Interbank">Interbank</option>
+          <option value="Scotiabank">Scotiabank</option>
+          <option value="Crediscotia">Crediscotia</option>
+          <option value="Saga Falabella">Saga Falabella</option>
+        </select>
+      </label>
+      <label>
+        Origen:
+        <select id="fOrigen">
+          <option value="">Todos</option>
+          <option value="Manual">Manual</option>
+          <option value="Yape">Yape</option>
+          <option value="Automate">Automate</option>
+        </select>
+      </label>
+      <label class="chk-inline">
+        <input type="checkbox" id="fSoloHormiga" />
+        Solo hormiga
+      </label>
+
       <button id="btnAplicarFiltros">Aplicar</button>
       <button id="btnLimpiarFiltros">Limpiar</button>
     </div>
