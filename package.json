@@ -1,0 +1,33 @@
+{
+  "name": "control-finanzas",
+  "version": "1.0.0",
+  "description": "Sistema de control financiero integrado con Yape y Supabase",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node readYapeEmails.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luiskiode/control-finanzas.git"
+  },
+  "keywords": [
+    "finanzas",
+    "yape",
+    "supabase",
+    "azure"
+  ],
+  "author": "Jorge Luis Tribeño Valladares",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/luiskiode/control-finanzas/issues"
+  },
+  "homepage": "https://github.com/luiskiode/control-finanzas#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.81.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0"
+  }
+}

@@ -1,4 +1,4 @@
-//⚙️ Configura tu Supabase
-const SUPABASE_URL = "https://bufjmxwhesxsmidcctkc.supabase.co";
-const SUPABASE_SERVICE_ROLE="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1ZmpteHdoZXN4c21pZGNjdGtjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTc3MDc0NiwiZXhwIjoyMDc1MzQ2NzQ2fQ.6a7xk_GEJ3WC4vRqAWz9Pc2xR8sGWO74BBPs4XplRXo" ;
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE);
+const SUPABASE_URL = "https://lwpdpheoomdszxcjqccy.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3cGRwaGVvb21kc3p4Y2pxY2N5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NzkyMTUsImV4cCI6MjA3MjI1NTIxNX0._6oEjUeSY95ZrRIRzmmfAqZw-X1C8-P2mWUEE4d5NcY"; 
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
